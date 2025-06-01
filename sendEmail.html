@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Email</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        table {
+            table-layout: fixed;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #444;
+        }
+        .subject-input input {
+            width: 70px;
+        }
+        .checkbox-cell {
+            width: 40px;
+            text-align: center;
+        }
+        .rollno-cell {
+            width: 60px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-black text-white flex flex-col min-h-screen">
+    
+    <header class="bg-gray-900 text-center py-4 text-2xl font-bold">Send Email</header>
+    
+    <main class="flex-grow p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold">Select Students</h2>
+            <div>
+                <button onclick="sendEmails()" class="bg-blue-500 px-4 py-2 rounded-xl hover:bg-blue-600">Send Email</button>
+                <button onclick="showAddSubjectPopup()" class="bg-yellow-500 px-4 py-2 rounded-xl hover:bg-yellow-600">Add Subject</button>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-2 mb-6">
+          <input type="text" id="emailSubject" placeholder="Subject" class="w-full p-3 bg-gray-800 rounded-xl border border-gray-600 text-white focus:outline-none">
+          <textarea placeholder="Text" id="emailText" class="w-full p-3 bg-gray-800 rounded-xl border border-gray-600 text-white focus:outline-none"></textarea>
+        </div>
+
+        <div class="overflow-x-auto bg-gray-800 rounded-xl">
+            <table id="marksTable"></table>
+        </div>
+    </main>
+
+    <div id="addSubjectPopup" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden">
+        <div class="bg-gray-900 p-6 rounded-2xl shadow-lg w-96 text-center">
+            <h2 class="text-xl font-semibold">Add Subjects</h2>
+            <input type="text" id="subjectName" placeholder="Enter subject name" class="w-full p-3 mt-4 bg-gray-800 rounded-xl border border-gray-600 text-white focus:outline-none">
+            <input type="number" id="subjectTotalMarks" placeholder="Enter total marks" class="w-full p-3 mt-4 bg-gray-800 rounded-xl border border-gray-600 text-white focus:outline-none">
+            <div id="subjectList" class="mt-4 text-left"></div>
+            <div class="flex justify-between mt-4">
+                <button onclick="closeAddSubjectPopup()" class="bg-gray-600 text-white px-4 py-2 rounded-xl hover:bg-gray-500">Close</button>
+                <button onclick="addSubject()" class="bg-white text-black px-4 py-2 rounded-xl hover:bg-gray-300">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-900 text-center py-4 text-sm">
+        Created by Shubh | Education Hub &copy; 2025
+    </footer>
+
+    <script>
+        let subjects = [];
+        let students = [];
+
+        function showAddSubjectPopup() { document.getElementById("addSubjectPopup").classList.remove("hidden"); renderSubjectList(); }
+        function closeAddSubjectPopup() { document.getElementById("addSubjectPopup").classList.add("hidden"); }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById("selectAll");
+            const checkboxes = document.querySelectorAll(".studentCheckbox");
+            checkboxes.forEach(checkbox => checkbox.checked = selectAll.checked);
+        }
+
+        document.addEventListener("change", function(event) {
+            if (event.target.classList.contains("studentCheckbox")) {
+                const checkboxes = document.querySelectorAll(".studentCheckbox");
+                const selectAll = document.getElementById("selectAll");
+                selectAll.checked = [...checkboxes].every(checkbox => checkbox.checked);
+            }
+        });
+
+        function addSubject() {
+            const subjectName = document.getElementById("subjectName").value;
+            const totalMarks = document.getElementById("subjectTotalMarks").value;
+            if (!subjectName || !totalMarks) { alert("Please enter a subject name and total marks."); return; }
+            subjects.push({ name: subjectName, totalMarks: totalMarks });
+            updateTable();
+            renderSubjectList();
+        }
+
+        function removeSubject(index) {
+            subjects.splice(index, 1);
+            updateTable();
+            renderSubjectList();
+        }
+
+        function renderSubjectList() {
+            const subjectListDiv = document.getElementById("subjectList");
+            subjectListDiv.innerHTML = "";
+            subjects.forEach((subject, index) => {
+                subjectListDiv.innerHTML += `<div class='flex justify-between bg-gray-800 p-2 rounded-lg mt-2'>
+                    <span>${subject.name} (Max: ${subject.totalMarks})</span>
+                    <button onclick='removeSubject(${index})' class='bg-red-500 px-2 py-1 rounded hover:bg-red-600'>Delete</button>
+                </div>`;
+            });
+        }
+
+        async function fetchStudents() {
+            const classId = localStorage.getItem("classId");
+            if (!classId) return;
+            try {
+                //const response = await fetch(`https://eduhubjs.onrender.com/get-students/${classId}`);
+                const response = await fetch(`http://localhost:4000/get-students/${classId}`);
+                const data = await response.json();
+                students = data.map(student => ({ rollNo: student.rollNo, name: student.name }));
+                updateTable();
+            } catch (error) {
+                console.error("Error fetching students:", error);
+            }
+        }
+
+        function updateTable() {
+            const table = document.getElementById("marksTable");
+            table.innerHTML = "";
+
+            let headerRow = `<tr class='bg-gray-700'>
+                                <th class='checkbox-cell'><input type='checkbox' id='selectAll' onclick='toggleSelectAll()'></th>
+                                <th class='rollno-cell'>Roll No.</th>
+                                <th>Student Name</th>`;
+            subjects.forEach(subject => {
+                headerRow += `<th id='sub'>${subject.name} (Max: ${subject.totalMarks})</th>`;
+            });
+            headerRow += `</tr>`;
+            table.innerHTML += headerRow;
+            
+            students.forEach(student => {
+                let row = `<tr><td class='checkbox-cell'><input type='checkbox' class='studentCheckbox' data-rollno='${student.rollNo}'></td><td class='rollno-cell'>${student.rollNo}</td><td>${student.name}</td>`;
+                subjects.forEach(() => {
+                    row += `<td class='subject-input'><input id='SMarks' type='number' class='w-32 p-1 bg-gray-700 text-white rounded' placeholder='Marks'></td>`;
+                });
+                row += "</tr>";
+                table.innerHTML += row;
+            });
+        }
+
+        fetchStudents();
+
+        async function sendEmails() {
+            const classId = localStorage.getItem("classId");
+            if (!classId) {
+                alert("Class ID not found!");
+                return;
+            }
+
+            const emailSubject = document.getElementById("emailSubject").value;
+            const emailText = document.getElementById("emailText").value;
+
+            if (!emailSubject || !emailText) {
+                alert("Please enter an email subject and text.");
+                return;
+            }
+
+            const selectedStudents = [...document.querySelectorAll(".studentCheckbox:checked")].map(checkbox => {
+                const rollNo = Number(checkbox.dataset.rollno);
+                const studentRow = checkbox.closest("tr");
+                const subjectMarks = [];
+
+                subjects.forEach((subject, index) => {
+                    const markInput = studentRow.querySelectorAll(".subject-input input")[index];
+                    subjectMarks.push({
+                        subject: subject.name,
+                        totalMarks: subject.totalMarks,
+                        obtainedMarks: markInput.value ? Number(markInput.value) : 0
+                    });
+                });
+
+                return { rollNo, subjectMarks };
+            });
+
+            // const selectedStudents = [...document.querySelectorAll(".studentCheckbox:checked")].map(checkbox => {
+            //     const rollNo = Number(checkbox.dataset.rollno);
+            //     const studentRow = checkbox.closest("tr");
+            //     const subjectMarks = [];
+
+            //     subjects.forEach((subject, index) => {
+            //         const markInput = studentRow.querySelectorAll(".subject-input input")[index];
+            //         subjectMarks.push({
+            //             subject: subject.name,
+            //             totalMarks: subject.totalMarks,
+            //             obtainedMarks: markInput.value ? Number(markInput.value) : 0
+            //         });
+            //     });
+
+            //     return { rollNo, subjectMarks };
+            // });
+
+            if (selectedStudents.length === 0) {
+                alert("No students selected!");
+                return;
+            }
+
+            try {
+                // const response = await fetch("https://eduhubjs.onrender.com/send-email", {
+                const response = await fetch("http://localhost:4000/send-email", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ classId, selectedStudents, emailSubject, emailText })
+                });
+
+                alert((await response.json()).message);
+            } catch (error) {
+                console.error("Error sending emails:", error);
+                alert("Failed to send emails.");
+            }
+        }
+    </script>
+</body>
+</html>

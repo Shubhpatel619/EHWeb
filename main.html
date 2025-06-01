@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white flex flex-col min-h-screen">
+    
+    <!-- Header -->
+    <header class="bg-gray-900 text-center py-4 text-2xl font-bold">Education Hub</header>
+    
+    <!-- Main Content (Dynamic Area) -->
+    <main id="dynamicContent" class="flex-grow p-8"></main>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-center py-4 text-sm">
+        Created by Shubh | Education Hub &copy; 2025
+    </footer>
+
+    <script>
+        function loadContent(file) {
+            fetch(file)
+                .then(response => response.text())
+                .then(data => {
+                    const dynamicContent = document.getElementById("dynamicContent");
+                    dynamicContent.innerHTML = data;
+
+                    // Manually execute scripts inside the loaded content
+                    const scripts = dynamicContent.getElementsByTagName("script");
+                    for (let script of scripts) {
+                        eval(script.textContent);
+                    }
+                })
+                .catch(error => console.error("Error loading content:", error));
+        }
+
+        // Ensure page loads `classList.html` when opening `main.html`
+        window.onload = function () {
+            loadContent("classList.html");
+        };
+    </script>
+</body>
+</html>
