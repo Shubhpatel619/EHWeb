@@ -167,7 +167,7 @@
                 return;
             }
 
-            const payload = { classId, rollNo, name, parent, mobile, email1, email2, editingStudentId };
+            const payload = { classId, rollNo, name, surname, parent, mobile, email1, email2, editingStudentId };
 
             const url = isEditing 
                 ? `${BASE_API_URL}/update-student/${classId}/${editingStudentId}`
