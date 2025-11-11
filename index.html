@@ -59,6 +59,7 @@
                     // Redirect after 1 second
                     setTimeout(() => {
                         window.location.href = "classList.html";
+                        document.getElementById("loginPopup").classList.add("hidden");
                     }, 1000);
                 } else {
                     alert(data.message);
